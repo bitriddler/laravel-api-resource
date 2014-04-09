@@ -1,0 +1,76 @@
+<?php {namespace}
+
+use Lifeentity\Api\Resource;
+
+class {Resource}Resource extends Resource {
+
+    /**
+     * @param {Resource} ${resources}
+     */
+    public function __construct({Resource} ${resources})
+    {
+        $this->{resources} = ${resources};
+    }
+
+    /**
+     * Get Resource name
+     * @return string
+     */
+    public function name()
+    {
+        return '{resource}';
+    }
+
+    /**
+     * Get all resources
+     * GET /{resource}/
+     * @return mixed
+     */
+    public function index()
+    {
+        return $this->{resources}->all();
+    }
+
+    /**
+     * Get this one resource
+     * GET /{resource}/id
+     * @param  int $id
+     * @return mixed
+     */
+    public function show($id)
+    {
+        return $this->{resources}->findOrFail($id);
+    }
+
+    /**
+     * Store this resource
+     * POST /{resource}/
+     * @return mixed
+     */
+    public function store()
+    {
+        return $this->{resources}->create(Input::all());
+    }
+
+    /**
+     * Update this resource
+     * PUT /{resource}/id
+     * @param  int $id
+     * @return mixed
+     */
+    public function update($id)
+    {
+        $this->{resources}->findOrFail($id)->update(Input::all());
+    }
+
+    /**
+     * Destory this resource
+     * DELETE /{resource}/id
+     * @param  int $id
+     * @return mixed
+     */
+    public function destroy($id)
+    {
+        $this->{resources}->findOrFail($id)->delete();
+    }
+}
