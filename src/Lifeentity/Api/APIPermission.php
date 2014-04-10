@@ -33,46 +33,54 @@ class APIPermission {
      */
 	public function allowed(Resource $resource, ResourceRequest $request, $apiKey)
 	{
-        // Get the request access levels
-        $accessLevels = $this->getRequestAccessLevels($resource->name(), $request->getAction());
+        $resourceAccessLevels = $this->getResourceAccessLevels($resource->name());
 
-        // Get current api key access level
-        $accessLevel = $this->getAccessLevel($apiKey);
+        // Get current access level from api key
+        $accessLevel = $this->getApiAccessLevel($apiKey);
 
-        // Check if this access level is in the access levels
-        return in_array($accessLevel, $accessLevels);
+        // If your access level is in the resource access levels then see if you have access to this method
+        if(in_array($accessLevel, $resourceAccessLevels))
+        {
+            $allowedActions = $this->getAllowedAccessLevelActions($resource->name(), $accessLevel);
+
+            return in_array($request->getAction(), $allowedActions);
+        }
+
+        // You are not in the resource access levels then you have access to all resource actions
+        return true;
 	}
 
     /**
-     * Return access levels that can access this resource and action
+     * Get allowed actions for this access level
      *
      * @param $name
-     * @param $action
+     * @param $level
      * @return array
      */
-    protected function getRequestAccessLevels($name, $action)
+    protected function getAllowedAccessLevelActions($name, $level)
     {
-        $accessLevels = array();
+        return $this->permissions[$name][$level];
+    }
 
+    /**
+     * @param $name
+     * @return array
+     */
+    protected function getResourceAccessLevel($name)
+    {
         if(isset($this->permissions[$name]))
         {
-            foreach($this->permissions[$name] as $access_level => $access_actions)
-            {
-                if(in_array($action, $access_actions))
-                {
-                    $accessLevels[] = $access_level;
-                }
-            }
+            return array_keys($this->permissions[$name]);
         }
 
-        return $accessLevels;
+        return array();
     }
 
     /**
      * @param $key
      * @return string
      */
-    protected function getAccessLevel($key)
+    protected function getApiAccessLevel($key)
     {
         foreach($this->keys as $cKey => $level)
         {
