@@ -33,44 +33,47 @@ class APIPermission {
      */
 	public function allowed(Resource $resource, ResourceRequest $request, $apiKey)
 	{
-        $resourceAccessLevels = $this->getResourceAccessLevels($resource->name());
-
         // Get current access level from api key
         $accessLevel = $this->getApiAccessLevel($apiKey);
 
-        // If your access level is in the resource access levels then see if you have access to this method
-        if(in_array($accessLevel, $resourceAccessLevels))
-        {
-            $allowedActions = $this->getAllowedAccessLevelActions($resource->name(), $accessLevel);
+        $only = $this->getAccessLevelOnly($accessLevel);
 
-            return in_array($request->getAction(), $allowedActions);
-        }
+        $except = $this->getAccessLevelExcept($accessLevel);
 
-        // You are not in the resource access levels then you have access to all resource actions
+        $qualifiedName = $resource->name().'@'.$request->getAction();
+
+        // If action is not in only array return false
+        if(!empty($only) && ! in_array($qualifiedName, $only)) return false;
+
+        // If action is in except array return false
+        if(!empty($except) && in_array($qualifiedName, $except)) return false;
+
         return true;
 	}
 
     /**
-     * Get allowed actions for this access level
-     *
-     * @param $name
-     * @param $level
+     * @param $accessLevel
      * @return array
      */
-    protected function getAllowedAccessLevelActions($name, $level)
+    protected function getAccessLevelOnly($accessLevel)
     {
-        return $this->permissions[$name][$level];
+        if(isset($this->permissions[$accessLevel]) && isset($this->permissions[$accessLevel]['only']))
+        {
+            return $this->permissions[$accessLevel]['only'];
+        }
+
+        return array();
     }
 
     /**
-     * @param $name
+     * @param $accessLevel
      * @return array
      */
-    protected function getResourceAccessLevel($name)
+    protected function getAccessLevelExcept($accessLevel)
     {
-        if(isset($this->permissions[$name]))
+        if(isset($this->permissions[$accessLevel]) && isset($this->permissions[$accessLevel]['except']))
         {
-            return array_keys($this->permissions[$name]);
+            return $this->permissions[$accessLevel]['except'];
         }
 
         return array();
