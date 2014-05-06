@@ -1,5 +1,6 @@
 <?php namespace Lifeentity\Api;
 
+use Illuminate\Support\Facades\App;
 use Lifeentity\Api\Input\InputData;
 
 abstract class Resource {
@@ -54,4 +55,21 @@ abstract class Resource {
      */
     abstract public function name();
 
+    /**
+     * Make another resource request
+     * @param $resourceName
+     * @param ResourceData $resourceData
+     * @throws APIException
+     * @return mixed
+     */
+    public function request($resourceName, ResourceData $resourceData)
+    {
+        // If can't get resource by name from the respoitory throw an exception because resource doesn't exists
+        if(! $resource = App::make('Lifeentity\Api\ResourceRepository')->getByName($resourceName))
+        {
+            throw new APIException("We can't find this resource in our application: {{$resourceName}}");
+        }
+
+        return $resource->call($resourceData);
+    }
 }
