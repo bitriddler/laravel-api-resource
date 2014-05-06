@@ -1,92 +1,67 @@
 <?php namespace Lifeentity\Api;
 
-class APIPermission {
+class APIPermission extends \Lifeentity\Eloquent\Model {
 
     /**
-     * Permissions array
+     * @var string
+     */
+    protected $table = 'api_permissions';
+
+    /**
      * @var array
      */
-    protected $permissions;
+    protected $fillable = array('resource', 'action');
 
     /**
-     * @var array
+     * @param $resource
+     * @param $action
+     * @return bool
      */
-    protected $keys;
-
-    /**
-     * Constructor
-     * @param array $permissions
-     * @param array $keys
-     */
-    public function __construct(array $permissions, array $keys)
+    public function match($resource, $action)
     {
-        $this->permissions = $permissions;
-        $this->keys = $keys;
+        // Match resource and action
+        return $this->matchResource($resource) && $this->matchAction($action);
     }
 
     /**
-     * Returns true if the api access is allowed to use this
-     * @param \Lifeentity\Api\Resource|Resource $resource
-     * @param  ResourceRequest $request
-     * @param $apiKey
-     * @return boolean
+     * @param $resource
+     * @return bool
      */
-    public function allowed(Resource $resource, ResourceRequest $request, $apiKey)
+    public function matchResource($resource)
     {
-        // Get current access level from api key
-        $accessLevel = $this->getApiAccessLevel($apiKey);
-
-        if(! $accessLevel) return false;
-
-        $only = $this->getAccessLevelOnly($accessLevel);
-
-        $except = $this->getAccessLevelExcept($accessLevel);
-
-        $qualifiedName = $resource->name().'@'.$request->getAction();
-
-        // If action is not in only array return false
-        if(!empty($only) && ! in_array($qualifiedName, $only)) return false;
-
-        // If action is in except array return false
-        if(!empty($except) && in_array($qualifiedName, $except)) return false;
-
-        return true;
+        return $this->matchStrings($this->resource, $resource);
     }
 
     /**
-     * @param $accessLevel
-     * @return array
+     * @param $action
+     * @return bool
      */
-    protected function getAccessLevelOnly($accessLevel)
+    public function matchAction($action)
     {
-        if(isset($this->permissions[$accessLevel]) && isset($this->permissions[$accessLevel]['only']))
-        {
-            return $this->permissions[$accessLevel]['only'];
+        return $this->matchStrings($this->action, $action);
+    }
+
+    /**
+     * @param $regex
+     * @param $subject
+     * @return bool
+     */
+    protected function matchStrings($regex, $subject)
+    {
+        // If it's a regex then preg match with the given resource
+        if( preg_match('/^\/.*\/[a-z]*$/', $regex)) {
+
+            return preg_match($regex, $subject) !== 0 && preg_match($regex, $subject) !== false;
         }
 
-        return array();
+        return $subject == $regex;
     }
 
     /**
-     * @param $accessLevel
-     * @return array
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    protected function getAccessLevelExcept($accessLevel)
+    public function application()
     {
-        if(isset($this->permissions[$accessLevel]) && isset($this->permissions[$accessLevel]['except']))
-        {
-            return $this->permissions[$accessLevel]['except'];
-        }
-
-        return array();
-    }
-
-    /**
-     * @param $key
-     * @return string
-     */
-    protected function getApiAccessLevel($key)
-    {
-        return isset($this->keys[$key]) ? $this->keys[$key] : '';
+        return $this->belongsTo(APIApplication::getClass(), 'application_id');
     }
 }

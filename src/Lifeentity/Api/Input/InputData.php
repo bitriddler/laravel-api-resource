@@ -1,6 +1,5 @@
 <?php namespace Lifeentity\Api\Input;
 
-
 class InputData {
 
 	/**

@@ -30,12 +30,12 @@ abstract class Resource {
 
     /**
      * Call this method with arguments on this resource
-     * @param  ResourceRequest $request
+     * @param  ResourceData $data
      * @return mixed
      */
-    public function call(ResourceRequest $request)
+    public function call(ResourceData $data)
     {
-        return call_user_func_array(array($this, $request->getAction()), $request->getArguments());
+        return call_user_func_array(array($this, $data->getAction()), $data->getArguments());
     }
 
     /**

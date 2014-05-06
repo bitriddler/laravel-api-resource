@@ -1,79 +1,77 @@
 <?php namespace Lifeentity\Api;
 
-use Illuminate\Support\Str;
-
-class ResourceRequest {
-
-	/**
-	 * Action name
-	 * @var string
-	 */
-	protected $action;
-
-	/**
-	 * Request method (GET, PUT, POST, DELETE)
-	 * @var string
-	 */
-	protected $method;
-
-	/**
-	 * Arguments array
-	 * @var array
-	 */
-	protected $arguments = array();
-
-	/**
-	 * Constructor
-	 * @param string $action
-	 * @param array $arguments
-	 * @param string $method 
-	 */
-	public function __construct($action, $method, array $arguments = array())
-	{
-		$this->action    = $action;
-		$this->arguments = $arguments;
-		$this->method    = strtoupper($method);
-	}
-
-	/**
-	 * Factory method
-	 * @param  string $uri
-	 * @param  string $method
-	 * @return ResourceRequest
-	 */
-	public static function make($uri, $method)
-	{
-		$arguments = explode('/', $uri);
-
-		$action = array_shift($arguments);
-
-		return new static($action, $method, $arguments);
-	}
-
-	/**
-	 * Get action name
-	 * @return string
-	 */
-	public function getAction()
-	{
-		list($action, ) = $this->getActionAndArguments();
-
-		return $action;
-	}
-
-	/**
-	 * Get arguments
-	 * @return array
-	 */
-	public function getArguments()
-	{
-		list(, $arguments) = $this->getActionAndArguments();
-
-		return $arguments;
-	}
+class ResourceData {
 
     /**
-     * This will return the resource action
+     * Action name
+     * @var string
+     */
+    protected $action;
+
+    /**
+     * Request method (GET, PUT, POST, DELETE)
+     * @var string
+     */
+    protected $method;
+
+    /**
+     * Arguments array
+     * @var array
+     */
+    protected $arguments = array();
+
+    /**
+     * Constructor
+     * @param string $action
+     * @param array $arguments
+     * @param string $method
+     */
+    public function __construct($action, $method, array $arguments = array())
+    {
+        $this->action    = $action;
+        $this->arguments = $arguments;
+        $this->method    = strtoupper($method);
+    }
+
+    /**
+     * Factory method
+     * @param  string $uri
+     * @param  string $method
+     * @return ResourceData
+     */
+    public static function make($uri, $method)
+    {
+        $arguments = explode('/', $uri);
+
+        $action = array_shift($arguments);
+
+        return new static($action, $method, $arguments);
+    }
+
+    /**
+     * Get action name
+     * @return string
+     */
+    public function getAction()
+    {
+        list($action, ) = $this->getActionAndArguments();
+
+        return $action;
+    }
+
+    /**
+     * Get arguments
+     * @return array
+     */
+    public function getArguments()
+    {
+        list(, $arguments) = $this->getActionAndArguments();
+
+        return $arguments;
+    }
+
+    /**
+     * This will return the resource action and arguments
      *
      * @return array
      */
@@ -129,5 +127,4 @@ class ResourceRequest {
     {
         return rtrim($this->method .' /'. $this->action.'/'.implode('/',$this->arguments), '/');
     }
-
 }

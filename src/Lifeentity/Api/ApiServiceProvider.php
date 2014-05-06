@@ -25,73 +25,91 @@ class ApiServiceProvider extends ServiceProvider {
 	 */
 	public function register()
 	{
-        $that = $this;
+        $this->package('lifeentity/api');
 
-        // Register web services request handling start point
-        Route::get('/web-services/{resource}/{all?}', function($resource, $all = '') use($that)
+        // Set routes for application management if enabled
+        if($this->app['config']->get('api::config.application_management'))
         {
-            $that->makeResourceRequest($resource, $all, Input::except('key'), Input::get('key'));
-        })->where('all', '.*');
+            $this->applicationManagementRoutes();
+        }
 
-        // Register web service for multi request handling
-        Route::get('/web-services/multi-request', function() use($that)
-        {
-            $requiredKeys = array('resource', 'action' , 'data', 'id');
-
-            $response = array();
-
-            # Loop on all inputs except key
-            foreach(Input::except('key') as $request)
-            {
-                # Make sure all the required keys exists
-                foreach($requiredKeys as $key)
-                {
-                    if(! array_key_exists($key, $request)) continue;
-                }
-
-                // Make resource request
-                $response['id'] = $that->makeResourceRequest($request['resource'], $request['action'], $request['data'], Input::get('key'));
-            }
-
-            return Response::json($response);
-        });
+        $this->webServicesRoutes();
 	}
 
     /**
-     * @param $resource
-     * @param $action
-     * @param $data
-     * @param $key
-     * @return mixed
-     * @throws ResourceException
+     * Web services routes
      */
-    protected function makeResourceRequest($resource, $action, $data, $key)
+    protected function webServicesRoutes()
     {
-        // Create new resource request
-        $request = ResourceRequest::make($action, Request::getMethod());
-
-        // If couldn't get resource by name from the respoitory throw an exception
-        if(! $resource = App::make('Lifeentity\Api\ResourceRepository')->getByName($resource))
+        Route::group($this->routeConfig(), function()
         {
-            throw new ResourceException("We can't find this resource in our application: {{$resource}}");
-        }
+            // Web services request
+            Route::any('resource/{resource}/{uri?}', function($resource, $uri = '')
+            {
+                return App::make('Lifeentity\Api\APIRequest')
 
-        // Call this resource
-        return App::make('Lifeentity\Api\ResourceManager')
-            ->call($resource, $request, new InputData($data), $key);
+                    ->call(Request::method(), $resource, $uri, Input::except('key', 'signature'), Input::get('key'), Input::get('signature'));
 
+            })->where('uri', '.*');
+        });
     }
 
     /**
+     * Get route configurations
      *
+     * @return array
      */
-    public function boot()
+    protected function routeConfig()
     {
-        $this->package('lifeentity/api');
+        $routeConfig = array();
 
-        $this->app->singleton('Lifeentity\Api\APIPermission', function()
+        $domain = $this->app['config']->get('api::config.routes.domain');
+        $prefix = $this->app['config']->get('api::configroutes.prefix');
+
+        if($domain) $routeConfig['domain'] = $domain;
+        if($prefix) $routeConfig['prefix'] = $prefix;
+
+        return compact('domain', 'prefix');
+    }
+
+    /**
+     * Add application management routes
+     */
+    protected function applicationManagementRoutes()
+    {
+        $routeConfig = $this->routeConfig();
+
+        $routeConfig['filter'] = $this->app['config']->get('api::config.filters.creation');
+
+        Route::group($routeConfig, function()
         {
-            return new APIPermission(Config::get('api::permissions'), Config::get('api::keys'));
+            Route::get('/application/create', function()
+            {
+                $applications = \Lifeentity\Api\APIApplication::orderBy('id', 'DESC')->get();
+
+                return View::make('api::application', compact('applications'));
+            });
+
+            Route::post('/application/update/{id}', function($id)
+            {
+                $application = \Lifeentity\Api\APIApplication::find($id);
+
+                $application->key = Input::get('key');
+                $application->secret = Input::get('secret');
+
+                $application->setPermissionsString(Input::get('permissions'));
+
+                $application->save();
+
+                return Redirect::back();
+            });
+
+            Route::post('/api/application/create', function()
+            {
+                \Lifeentity\Api\APIApplication::quickCreate(Input::get('key'), Input::get('secret'), Input::get('permissions'));
+
+                return Redirect::back();
+            });
         });
     }
 
@@ -104,5 +122,4 @@ class ApiServiceProvider extends ServiceProvider {
 	{
 		return array();
 	}
-
 }
