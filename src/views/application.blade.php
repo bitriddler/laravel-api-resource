@@ -19,10 +19,9 @@
 
 <h1 style="text-align: center; color:#AAA;">
     API: Application Creation Page
-    <small style="color:#900; font-size:14px;">secured</small>
 </h1>
 
-<form action="" method="POST" style="text-align: center">
+<form action="{{ $baseUrl }}/create" method="POST" style="text-align: center">
     <input placeholder="key" type="text" name="key"/><br/>
     <input placeholder="secret" type="text" name="secret"/><br/>
     <textarea placeholder="permissions" name="permissions" rows="10" cols="60"></textarea><br/>
@@ -33,7 +32,8 @@
 <div>
     @foreach($applications as $application)
     <div style="background:#EEE; padding:20px; margin-top:10px; text-align: center">
-        <form action="/api/application/update/{{ $application->id }}" method="POST">
+        <a style="color:#900;" href="{{ $baseUrl }}/delete/{{ $application->id }}">Delete</a><Br/>
+        <form action="{{ $baseUrl }}/update/{{ $application->id }}" method="POST">
             <input type="text" name="key" value="{{ $application->key }}"/><br/>
             <input type="text" name="secret" value="{{ $application->secret }}"/><br/>
             <textarea name="permissions" id="" cols="30" rows="10">{{ $application->getPermissionsString() }}</textarea><br/>

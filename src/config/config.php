@@ -2,8 +2,12 @@
 
 return array(
     'routes' => array(
-        'prefix' => '/api/1',
-        'domain' => '',
+        'resources' => array(
+            'prefix' => '/api/1',
+        ),
+        'application' => array(
+            'prefix' => 'application',
+        )
     ),
 
     'filters' => array(

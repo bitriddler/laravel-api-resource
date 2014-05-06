@@ -3,11 +3,12 @@
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Input;
+use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
-use Lifeentity\Api\Input\InputData;
 
 class ApiServiceProvider extends ServiceProvider {
 
@@ -41,10 +42,10 @@ class ApiServiceProvider extends ServiceProvider {
      */
     protected function webServicesRoutes()
     {
-        Route::group($this->routeConfig(), function()
+        Route::group($this->getRouteConfig('resources'), function()
         {
             // Web services request
-            Route::any('resource/{resource}/{uri?}', function($resource, $uri = '')
+            Route::any('{resource}/{uri?}', function($resource, $uri = '')
             {
                 return App::make('Lifeentity\Api\APIRequest')
 
@@ -55,21 +56,20 @@ class ApiServiceProvider extends ServiceProvider {
     }
 
     /**
-     * Get route configurations
-     *
+     * @param $name
      * @return array
      */
-    protected function routeConfig()
+    protected function getRouteConfig($name)
     {
         $routeConfig = array();
 
-        $domain = $this->app['config']->get('api::config.routes.domain');
-        $prefix = $this->app['config']->get('api::configroutes.prefix');
+        $domain = $this->app['config']->get("api::config.routes.{$name}.domain");
+        $prefix = $this->app['config']->get("api::config.routes.{$name}.prefix");
 
         if($domain) $routeConfig['domain'] = $domain;
         if($prefix) $routeConfig['prefix'] = $prefix;
 
-        return compact('domain', 'prefix');
+        return $routeConfig;
     }
 
     /**
@@ -77,22 +77,31 @@ class ApiServiceProvider extends ServiceProvider {
      */
     protected function applicationManagementRoutes()
     {
-        $routeConfig = $this->routeConfig();
+        $routeConfig = $this->getRouteConfig('application');
 
         $routeConfig['filter'] = $this->app['config']->get('api::config.filters.creation');
 
         Route::group($routeConfig, function()
         {
-            Route::get('/application/create', function()
+            Route::get('/', function()
             {
-                $applications = \Lifeentity\Api\APIApplication::orderBy('id', 'DESC')->get();
+                $applications = APIApplication::orderBy('id', 'DESC')->get();
 
-                return View::make('api::application', compact('applications'));
+                $baseUrl = Request::url();
+
+                return View::make('api::application', compact('applications', 'baseUrl'));
             });
 
-            Route::post('/application/update/{id}', function($id)
+            Route::get('/delete/{id}', function($id)
             {
-                $application = \Lifeentity\Api\APIApplication::find($id);
+                APIApplication::find($id)->delete();
+
+                return Redirect::back();
+            });
+
+            Route::post('/update/{id}', function($id)
+            {
+                $application = APIApplication::find($id);
 
                 $application->key = Input::get('key');
                 $application->secret = Input::get('secret');
@@ -104,9 +113,9 @@ class ApiServiceProvider extends ServiceProvider {
                 return Redirect::back();
             });
 
-            Route::post('/api/application/create', function()
+            Route::post('/create', function()
             {
-                \Lifeentity\Api\APIApplication::quickCreate(Input::get('key'), Input::get('secret'), Input::get('permissions'));
+                APIApplication::quickCreate(Input::get('key'), Input::get('secret'), Input::get('permissions'));
 
                 return Redirect::back();
             });
