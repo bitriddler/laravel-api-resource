@@ -1,5 +1,7 @@
 <?php namespace Lifeentity\Api;
 
+use Illuminate\Support\Str;
+
 class ResourceData {
 
     /**
