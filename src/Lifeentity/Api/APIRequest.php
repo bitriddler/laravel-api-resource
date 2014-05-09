@@ -43,19 +43,19 @@ class APIRequest {
         // Get application by the api key
         if(! $application = $this->app->make('Lifeentity\Api\APIApplication')->byApiKey($key)->first())
         {
-            throw new APIException("The api key is incorrect.");
+            throw new APIPermissionException("The api key is incorrect.");
         }
 
         // Check signature
         if(! $application->checkSignature($signature))
         {
-            throw new APIException("The api signature is incorrect.");
+            throw new APIPermissionException("The api signature is incorrect.");
         }
 
         // Check if this application has permissions to access this resource and action
         if(! $application->checkPermissions($resource->name(), $resourceData->getAction()))
         {
-            throw new APIException("You don't have permissions to request `{$resourceData->getAction()}` on this resource: {{$resource->name()}}");
+            throw new APIPermissionException("You don't have permissions to request `{$resourceData->getAction()}` on this resource: {{$resource->name()}}");
         }
 
         // Set inputs for this resource
